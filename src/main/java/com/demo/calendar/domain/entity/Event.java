@@ -23,15 +23,15 @@ public class Event {
 
     private String content;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member owner;
-
     @Column(nullable = false)
     private LocalDateTime startTime;
 
     @Column(nullable = false)
     private LocalDateTime endTime;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member owner;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "calendar_id", nullable = false)
@@ -42,9 +42,9 @@ public class Event {
         this.id = id;
         this.title = title;
         this.content = content;
-        this.owner = owner;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.owner = owner;
         this.calendar = calendar;
     }
 
