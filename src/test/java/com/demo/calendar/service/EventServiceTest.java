@@ -3,6 +3,7 @@ package com.demo.calendar.service;
 import com.demo.calendar.domain.dto.request.CalendarRequest;
 import com.demo.calendar.domain.dto.request.EventRequest;
 import com.demo.calendar.domain.dto.response.EventResponse;
+import com.demo.calendar.domain.dto.search.EventSearch;
 import com.demo.calendar.domain.entity.Member;
 import com.demo.calendar.repository.CalendarRepository;
 import com.demo.calendar.repository.MemberRepository;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,6 +82,7 @@ class EventServiceTest {
         // Given
         CalendarRequest calendarRequest = new CalendarRequest("My Calendar", "Event Testing");
         Long calendarId = calendarService.createCalendar(savedMember.getId(), calendarRequest).getId();
+        EventSearch eventSearch = new EventSearch();
 
         EventRequest eventRequest1 = EventRequest.builder()
                 .title("Event-1")
@@ -101,7 +104,7 @@ class EventServiceTest {
         eventService.createEvent(eventRequest2, savedMember.getId());
 
         // When
-        List<EventResponse> events = eventService.getEventsByCalendar(calendarId);
+        Page<EventResponse> events = eventService.getEventsByCalendar(calendarId, eventSearch);
 
         // Then
         assertThat(events).hasSize(2);

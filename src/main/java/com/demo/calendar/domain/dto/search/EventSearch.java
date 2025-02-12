@@ -8,6 +8,6 @@ import java.time.LocalDateTime;
 public class EventSearch {
 
     private String title;
-    private LocalDateTime startDate;
+    private LocalDateTime startTime;
     private LocalDateTime endTime;
 }

@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -41,10 +42,12 @@ public class CalendarShareService {
                 })
                 .toList();
 
-
-
         members.forEach(member -> {
             CalendarShareId calendarShareId = new CalendarShareId(calendar.getId(), member.getId());
+
+            // 중복 공유 방지
+            if (calendarShareRepository.existsById(calendarShareId)) return;
+
             CalendarShare calendarShare = new CalendarShare(calendarShareId, calendar, member);
 
             // 권한 자동 확장 후 저장
@@ -58,8 +61,9 @@ public class CalendarShareService {
     /**
      * 특정 사용자에게 공유된 캘린더 목록 조회.
      */
+    @Transactional(readOnly = true)
     public List<CalendarResponse> getSharedCalendars(Long memberId) {
-        List<CalendarShare> sharedCalendars = calendarShareRepository.findByMemberId(memberId);
+        List<CalendarShare> sharedCalendars = calendarShareRepository.findByMemberIdWithFetchJoin(memberId);
         return sharedCalendars.stream()
                 .map(calendarShare -> CalendarMapper.convertToResponse(calendarShare.getCalendar()))
                 .toList();
@@ -68,8 +72,9 @@ public class CalendarShareService {
     /**
      * 특정 캘린더를 공유 중인 사용자 정보 조회.
      */
+    @Transactional(readOnly = true)
     public List<MemberResponse> getSharedUsers(Long calendarId) {
-        List<CalendarShare> sharedCalendars = calendarShareRepository.findByCalendarId(calendarId);
+        List<CalendarShare> sharedCalendars = calendarShareRepository.findByCalendarIdWithFetchJoin(calendarId);
         return sharedCalendars.stream()
                 .map(calendarShare -> MemberMapper.convertToResponse(calendarShare.getMember()))
                 .toList();
@@ -78,27 +83,26 @@ public class CalendarShareService {
     /**
      * 캘린더 공유 해제.
      */
-    public void unshareCalendar(Long calendarId, Long ownerId, Long memberId) {
+    public void unshareCalendar(Long calendarId, Long ownerId, List<Long> memberIds) {
 
         Calendar calendar = calendarRepository.findById(calendarId)
                 .orElseThrow(() -> new EntityNotFoundException("Calendar not found with id: " + calendarId));
 
-        CalendarShareId id = new CalendarShareId(calendarId, memberId);
-        if (!calendarShareRepository.existsById(id)) {
-            throw new EntityNotFoundException("Shared calendar not found for calendarId: " + calendarId +
-                    ", memberId: " + memberId);
-        }
-
-        if (calendar.getOwner().getId() != ownerId) {
+        if (!calendar.getOwner().getId().equals(ownerId)) {
             throw new AccessDeniedException("캘린더의 소유자가 아닙니다.");
         }
 
-        calendarShareRepository.deleteById(id);
+        List<CalendarShareId> shareIds = memberIds.stream()
+                .map(memberId -> new CalendarShareId(calendarId, memberId))
+                .collect(Collectors.toList());
+
+        calendarShareRepository.deleteAllById(shareIds);
     }
 
     /**
      * 사용자가 특정 캘린더를 공유 받았는지 확인.
      */
+    @Transactional(readOnly = true)
     public Boolean isCalendarShared(CalendarShareId calendarShareId) {
         return calendarShareRepository.existsById(calendarShareId);
     }

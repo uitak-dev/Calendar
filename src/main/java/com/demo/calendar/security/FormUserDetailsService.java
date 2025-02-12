@@ -30,7 +30,7 @@ public class FormUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("No user found with username" + username));
 
         List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
-        MemberDto memberDto = new MemberDto(member.getId(), member.getUsername(), member.getEmail());
+        MemberDto memberDto = new MemberDto(member.getId(), member.getUsername(), member.getPassword(), member.getEmail());
 
         return new MemberContext(memberDto, authorities);
     }

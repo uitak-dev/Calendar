@@ -2,6 +2,7 @@ package com.demo.calendar.service;
 
 import com.demo.calendar.domain.dto.request.EventRequest;
 import com.demo.calendar.domain.dto.response.EventResponse;
+import com.demo.calendar.domain.dto.search.EventSearch;
 import com.demo.calendar.domain.entity.*;
 import com.demo.calendar.repository.CalendarRepository;
 import com.demo.calendar.repository.CalendarShareRepository;
@@ -11,6 +12,8 @@ import com.demo.calendar.utility.mapper.EventMapper;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +43,7 @@ public class EventService {
         Calendar calendar = calendarRepository.findById(calendarId)
                 .orElseThrow(() -> new EntityNotFoundException("Calendar not found with id: " + calendarId));
 
-        if(!checkPermission(calendar, null, memberId, Permission.WRITE)) {
+        if(!isPermission(calendar, null, memberId, Permission.WRITE)) {
             throw new AccessDeniedException("해당 캘린더에 이벤트 생성 권한이 없습니다.");
         }
 
@@ -62,11 +65,8 @@ public class EventService {
      * 특정 캘린더의 이벤트 목록 조회.
      * 검색 조건 추가: 기간, 제목, 페이징
      */
-    public List<EventResponse> getEventsByCalendar(Long calendarId) {
-        List<Event> events = eventRepository.findByCalendarId(calendarId);
-        return events.stream()
-                .map(EventMapper::convertToResponse)
-                .toList();
+    public Page<EventResponse> getEventsByCalendar(Long calendarId, EventSearch eventSearch) {
+        return eventRepository.searchEventList(calendarId, eventSearch, PageRequest.of(0, 10));
     }
 
     /**
@@ -91,7 +91,7 @@ public class EventService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("Event not found with id: " + eventId));
 
-        if(!checkPermission(calendar, event, memberId, Permission.EDIT)) {
+        if(!isPermission(calendar, event, memberId, Permission.EDIT)) {
             throw new AccessDeniedException("해당 캘린더에 이벤트 수정 권한이 없습니다.");
         }
 
@@ -109,7 +109,7 @@ public class EventService {
                 .orElseThrow(() -> new EntityNotFoundException("Event not found with id: " + eventId));
 
 
-        if (!checkPermission(event.getCalendar(), event, memberId, Permission.EDIT)) {
+        if (!isPermission(event.getCalendar(), event, memberId, Permission.EDIT)) {
             throw new AccessDeniedException("해당 캘린더에 이벤트 삭제 권한이 없습니다.");
         }
 
@@ -119,7 +119,7 @@ public class EventService {
     /**
      * 이벤트 생성/수정 권한 확인.
      */
-    private boolean checkPermission(Calendar calendar, @Nullable Event event, Long memberId, Permission requiredPermission) {
+    private boolean isPermission(Calendar calendar, @Nullable Event event, Long memberId, Permission requiredPermission) {
 
         // 캘린더의 소유주인 경우.
         if (calendar.getOwner().getId().equals(memberId)) return true;

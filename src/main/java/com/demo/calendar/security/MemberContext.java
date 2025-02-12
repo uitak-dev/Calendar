@@ -18,17 +18,17 @@ public class MemberContext implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return null;
+        return authorities;
     }
 
     @Override
     public String getPassword() {
-        return null;
+        return memberDto.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return null;
+        return memberDto.getUsername();
     }
 
     @Override
