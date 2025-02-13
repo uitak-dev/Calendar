@@ -1,4 +1,4 @@
-package com.demo.calendar.security;
+package com.demo.calendar.security.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

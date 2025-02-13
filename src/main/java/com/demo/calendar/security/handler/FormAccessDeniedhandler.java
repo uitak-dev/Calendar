@@ -1,4 +1,4 @@
-package com.demo.calendar.security;
+package com.demo.calendar.security.handler;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

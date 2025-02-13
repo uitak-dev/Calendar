@@ -9,9 +9,11 @@ import com.demo.calendar.repository.CalendarShareRepository;
 import com.demo.calendar.repository.EventRepository;
 import com.demo.calendar.repository.MemberRepository;
 import com.demo.calendar.utility.mapper.EventMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
@@ -24,6 +26,7 @@ import java.util.List;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class EventService {
 
     private final MemberRepository memberRepository;
@@ -66,7 +69,13 @@ public class EventService {
      * 검색 조건 추가: 기간, 제목, 페이징
      */
     public Page<EventResponse> getEventsByCalendar(Long calendarId, EventSearch eventSearch) {
-        return eventRepository.searchEventList(calendarId, eventSearch, PageRequest.of(0, 10));
+        Page<EventResponse> events = eventRepository.searchEventList(calendarId, eventSearch, PageRequest.of(0, 5));
+
+        if (events.isEmpty()) {
+            log.warn("캘린더 ID {}에 대한 이벤트가 없습니다.", calendarId);
+        }
+
+        return events;
     }
 
     /**

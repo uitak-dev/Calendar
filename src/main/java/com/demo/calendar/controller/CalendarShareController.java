@@ -1,5 +1,6 @@
 package com.demo.calendar.controller;
 
+import com.demo.calendar.domain.dto.request.CalendarShareRequest;
 import com.demo.calendar.domain.dto.response.CalendarResponse;
 import com.demo.calendar.domain.dto.response.MemberResponse;
 import com.demo.calendar.domain.entity.Permission;
@@ -23,10 +24,13 @@ public class CalendarShareController {
     @Operation(summary = "캘린더 공유", description = "특정 캘린더를 여러 사용자에게 공유합니다.")
     @PostMapping("/{calendarId}/share")
     public ResponseEntity<Void> shareCalendar(@PathVariable Long calendarId,
-                                              @RequestBody List<Long> memberIds,
-                                              @RequestBody Permission permission) {
+                                              @RequestBody CalendarShareRequest calendarShareRequest,
+                                              @AuthenticationPrincipal MemberContext memberContext) {
 
-        calendarShareService.shareCalendar(calendarId, memberIds, permission);
+        Long loggedInMemberId = memberContext.getMemberDto().getId();
+
+        calendarShareService.shareCalendar(calendarId, loggedInMemberId,
+                calendarShareRequest.getMemberIds(), calendarShareRequest.getPermission());
         return ResponseEntity.ok().build();
     }
 

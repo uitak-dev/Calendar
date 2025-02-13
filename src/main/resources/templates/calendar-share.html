@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>캘린더 공유</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+    <h2 class="text-center">캘린더 공유</h2>
+
+    <!-- ✅ 캘린더 ID 자동 입력 (숨김 처리) -->
+    <input type="hidden" id="calendarId">
+
+    <!-- ✅ 회원 검색 -->
+    <form id="searchForm" class="mb-3">
+        <div class="row">
+            <div class="col-md-4">
+                <input type="text" id="searchUsername" class="form-control" placeholder="회원 이름 검색">
+            </div>
+            <div class="col-md-4">
+                <input type="text" id="searchEmail" class="form-control" placeholder="회원 이메일 검색">
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">검색</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- ✅ 회원 목록 -->
+    <h3>회원 목록</h3>
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>선택</th>
+            <th>아이디</th>
+            <th>이메일</th>
+        </tr>
+        </thead>
+        <tbody id="memberList">
+        <tr><td colspan="3" class="text-center">회원 정보를 불러오는 중...</td></tr>
+        </tbody>
+    </table>
+
+    <!-- ✅ 페이징 -->
+    <div class="pagination text-center" id="pagination"></div>
+
+    <!-- ✅ 공유 권한 선택 -->
+    <div class="mb-3">
+        <label for="permissionSelect" class="form-label">공유 권한</label>
+        <select id="permissionSelect" class="form-select">
+            <option value="READ">읽기</option>
+            <option value="WRITE">쓰기</option>
+            <option value="EDIT">수정</option>
+        </select>
+    </div>
+
+    <!-- ✅ 공유하기 버튼 -->
+    <button onclick="shareCalendar()" class="btn btn-success w-100">공유하기</button>
+
+    <div class="text-center mt-4">
+        <a href="/" class="btn btn-secondary">홈으로</a>
+    </div>
+</div>
+
+<script>
+    let calendarId;
+    let currentPage = 0;
+    let totalPages = 1;
+
+    document.addEventListener("DOMContentLoaded", async function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        calendarId = urlParams.get("calendarId");
+
+        if (!calendarId) {
+            alert("잘못된 접근입니다.");
+            window.location.href = "/";
+        }
+
+        document.getElementById("calendarId").value = calendarId;
+
+        await loadMemberList();
+    });
+
+    document.getElementById("searchForm").addEventListener("submit", async function (event) {
+        event.preventDefault();
+        await loadMemberList();
+    });
+
+    async function loadMemberList(page = 0) {
+        try {
+            const url = new URL("/api/members", window.location.origin);
+            url.searchParams.append("page", page);
+            url.searchParams.append("size", 5);
+
+            const username = document.getElementById("searchUsername").value.trim();
+            const email = document.getElementById("searchEmail").value.trim();
+
+            if (username) url.searchParams.append("username", username);
+            if (email) url.searchParams.append("email", email);
+
+            const response = await fetch(url, { credentials: "include" });
+
+            // ✅ 검색 결과가 없을 때 (204 No Content 처리)
+            if (response.status === 204) {
+                document.getElementById("memberList").innerHTML = "<tr><td colspan='3' class='text-center'>검색 결과가 없습니다.</td></tr>";
+                return;
+            }
+
+            if (!response.ok) throw new Error("회원 목록을 불러오지 못했습니다.");
+
+            // ✅ 서버 응답을 JSON으로 변환
+            const responseData = await response.json();
+
+            const members = responseData._embedded?.memberResponseList || [];
+            totalPages = responseData.page.totalPages;
+
+            const memberList = document.getElementById("memberList");
+            memberList.innerHTML = "";
+
+            if (members.length === 0) {
+                memberList.innerHTML = "<tr><td colspan='3' class='text-center'>검색 결과가 없습니다.</td></tr>";
+                return;
+            }
+
+            members.forEach(member => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td><input type="checkbox" class="member-checkbox" value="${member.id}"></td>
+                    <td>${member.username}</td>
+                    <td>${member.email}</td>
+                `;
+                memberList.appendChild(row);
+            });
+
+            updatePagination();
+        } catch (error) {
+            console.error("회원 목록 로딩 오류:", error);
+            alert("회원 목록을 불러오는 중 오류가 발생했습니다.");
+        }
+    }
+
+    function updatePagination() {
+        const pagination = document.getElementById("pagination");
+        pagination.innerHTML = "";
+
+        for (let i = 0; i < totalPages; i++) {
+            const button = document.createElement("button");
+            button.innerText = i + 1;
+            button.classList.add(i === currentPage ? "active" : "");
+            button.onclick = () => {
+                currentPage = i;
+                loadMemberList(i);
+            };
+            pagination.appendChild(button);
+        }
+    }
+
+    async function shareCalendar() {
+        const selectedMembers = Array.from(document.querySelectorAll(".member-checkbox:checked"))
+                                    .map(cb => cb.value);
+
+        if (selectedMembers.length === 0) {
+            alert("공유할 회원을 선택하세요.");
+            return;
+        }
+
+        const permission = document.getElementById("permissionSelect").value;
+
+        try {
+            const response = await fetch(`/api/calendar-share/${calendarId}/share`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ memberIds: selectedMembers, permission })
+            });
+
+            if (!response.ok) throw new Error("캘린더 공유 실패");
+
+            alert("캘린더가 성공적으로 공유되었습니다.");
+            window.location.href = `/calendar/${calendarId}/detail`;
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+</script>
+
+</body>
+</html>

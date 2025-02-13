@@ -31,9 +31,13 @@ public class CalendarShareService {
     /**
      * 여러 사용자에게 캘린더 공유.(자동으로 하위 권한 포함)
      */
-    public void shareCalendar(Long calendarId, List<Long> memberIdList, Permission permission) {
+    public void shareCalendar(Long calendarId, Long loggedInMemberId, List<Long> memberIdList, Permission permission) {
         Calendar calendar = calendarRepository.findById(calendarId)
                 .orElseThrow(() -> new EntityNotFoundException("Calendar not found with id: " + calendarId));
+
+        if (calendar.getOwner().getId() != loggedInMemberId) {
+            throw new AccessDeniedException("캘린더의 소유주만 공유할 수 있습니다.");
+        }
 
         List<Member> members = memberIdList.stream()
                 .map(memberId -> {

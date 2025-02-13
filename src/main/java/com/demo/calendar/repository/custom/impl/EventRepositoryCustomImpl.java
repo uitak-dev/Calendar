@@ -1,10 +1,11 @@
-package com.demo.calendar.repository.custom;
+package com.demo.calendar.repository.custom.impl;
 
 import com.demo.calendar.domain.dto.response.EventResponse;
 import com.demo.calendar.domain.dto.search.EventSearch;
 import com.demo.calendar.domain.entity.Calendar;
 import com.demo.calendar.domain.entity.QEvent;
 import com.demo.calendar.repository.CalendarRepository;
+import com.demo.calendar.repository.custom.EventRepositoryCustom;
 import com.demo.calendar.utility.mapper.EventMapper;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPQLTemplates;
@@ -52,7 +53,7 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
                 .fetch()
                 .stream()
                 .map(EventMapper::convertToResponse)
-                .collect(Collectors.toList());
+                .toList();
 
         // 전체 개수 조회 (페이징 처리)
         JPAQuery<Long> countQuery = queryFactory
@@ -72,15 +73,18 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
         return StringUtils.hasLength(title) ? event.title.containsIgnoreCase(title) : null;
     }
 
-    private BooleanExpression betweenStartAndEnd(LocalDateTime startTime, LocalDateTime endTime) {
-        if (startTime != null && endTime != null) {
-            return event.startTime.lt(endTime).and(event.endTime.gt(startTime));
+    private BooleanExpression betweenStartAndEnd(String startTime, String endTime) {
+        LocalDateTime start = (startTime != null) ? LocalDateTime.parse(startTime) : null;
+        LocalDateTime end = (endTime != null) ? LocalDateTime.parse(endTime) : null;
+
+        if (start != null && end != null) {
+            return event.startTime.lt(end).and(event.endTime.gt(start));
         }
-        else if(startTime != null) {
-            return event.endTime.gt(startTime);
+        else if(start != null) {
+            return event.endTime.gt(start);
         }
-        else if(endTime != null) {
-            return event.startTime.lt(endTime);
+        else if(end != null) {
+            return event.startTime.lt(end);
         }
 
         return null;

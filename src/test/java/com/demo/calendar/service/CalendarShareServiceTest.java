@@ -56,7 +56,7 @@ class CalendarShareServiceTest {
     }
 
     @Test
-    @WithUserDetails(value = "user1", userDetailsServiceBeanName = "formUserDetailsService")
+    @WithUserDetails(value = "user1", userDetailsServiceBeanName = "customUserDetailsService")
     void 캘린더_공유_테스트() {
         // Given
         Member member1 = savedMembers.get(0);
@@ -68,7 +68,7 @@ class CalendarShareServiceTest {
 
         // When
         calendarShareService.shareCalendar(
-                createdCalendar.getId(),
+                createdCalendar.getId(), member1.getId(),
                 List.of(member2.getId(), member3.getId()),
                 Permission.READ);
 
@@ -83,7 +83,7 @@ class CalendarShareServiceTest {
     }
 
     @Test
-    @WithUserDetails(value = "user1", userDetailsServiceBeanName = "formUserDetailsService")
+    @WithUserDetails(value = "user1", userDetailsServiceBeanName = "customUserDetailsService")
     void 공유된_사용자_목록_조회_테스트() {
         // Given
         Member member1 = savedMembers.get(0);
@@ -94,7 +94,7 @@ class CalendarShareServiceTest {
         CalendarResponse createdCalendar = calendarService.createCalendar(member1.getId(), request);
 
         calendarShareService.shareCalendar(
-                createdCalendar.getId(),
+                createdCalendar.getId(), member1.getId(),
                 List.of(member2.getId(), member3.getId()),
                 Permission.WRITE);
 

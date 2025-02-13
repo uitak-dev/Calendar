@@ -78,8 +78,8 @@ class EventRepositoryCustomImplTest {
         // Given
         EventSearch searchCondition = new EventSearch();
         searchCondition.setTitle("Event");
-        searchCondition.setStartTime(LocalDateTime.now().plusDays(1));
-        searchCondition.setEndTime(LocalDateTime.now().plusDays(5));
+        searchCondition.setStartTime(String.valueOf(LocalDateTime.now().plusDays(1)));
+        searchCondition.setEndTime(String.valueOf(LocalDateTime.now().plusDays(5)));
 
         PageRequest pageRequest = PageRequest.of(0, 10);
 

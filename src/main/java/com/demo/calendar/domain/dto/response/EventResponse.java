@@ -18,8 +18,8 @@ public class EventResponse {
     private String title;
     private String content;
 
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
+    private String startTime;
+    private String endTime;
 
     private CalendarResponse calendar;
 }

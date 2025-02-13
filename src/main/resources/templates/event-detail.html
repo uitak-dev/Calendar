@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>이벤트 상세</title>
+
+    <!-- ✅ Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+        }
+        .container {
+            margin-top: 50px;
+            max-width: 600px;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease-in-out;
+        }
+        .container:hover {
+            box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.15);
+        }
+        .event-info {
+            margin-bottom: 20px;
+        }
+        .event-info h4 {
+            color: #007bff;
+            font-weight: bold;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .event-detail-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .event-detail-item:last-child {
+            border-bottom: none;
+        }
+        .event-detail-item strong {
+            color: #495057;
+            min-width: 100px;
+        }
+        .btn-group {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 class="text-center">이벤트 상세</h2>
+
+    <!-- ✅ 이벤트 정보 -->
+    <div class="event-info">
+        <h4 id="event-title">이벤트 제목</h4>
+        <div class="event-detail-item">
+            <strong>내용:</strong> <span id="event-content"></span>
+        </div>
+        <div class="event-detail-item">
+            <strong>시작 시간:</strong> <span id="event-startTime"></span>
+        </div>
+        <div class="event-detail-item">
+            <strong>종료 시간:</strong> <span id="event-endTime"></span>
+        </div>
+        <div class="event-detail-item">
+            <strong>캘린더:</strong> <span id="event-calendar"></span>
+        </div>
+    </div>
+
+    <!-- ✅ 홈 및 캘린더 상세 페이지 이동 -->
+    <div class="btn-group">
+        <a href="/" class="btn btn-secondary">홈으로</a>
+        <a href="#" id="calendar-detail-link" class="btn btn-primary">캘린더 상세</a>
+        <a href="#" id="editEventBtn" class="btn btn-warning">이벤트 수정</a>
+    </div>
+</div>
+
+<!-- ✅ JavaScript 비동기 이벤트 데이터 로드 -->
+<script>
+    document.addEventListener("DOMContentLoaded", async function () {
+        const pathSegments = window.location.pathname.split('/');
+        const eventId = pathSegments[pathSegments.length - 2]; // ✅ URL에서 eventId 추출
+
+        if (!eventId || isNaN(eventId)) {
+            alert("잘못된 접근입니다.");
+            window.location.href = "/";
+            return;
+        }
+
+        // ✅ "이벤트 수정" 버튼에 eventId 추가하여 수정 페이지로 이동하도록 설정
+        document.getElementById("editEventBtn").setAttribute("href", `/event/edit?eventId=${eventId}`);
+
+        await loadEventDetail(eventId);
+    });
+
+    async function loadEventDetail(eventId) {
+        try {
+            const response = await fetch(`/api/events/${eventId}`, { credentials: "include" });
+            if (!response.ok) throw new Error("이벤트 정보를 불러오지 못했습니다.");
+
+            const event = await response.json();
+            document.getElementById("event-title").innerText = event.title;
+            document.getElementById("event-content").innerText = event.content;
+            document.getElementById("event-startTime").innerText = new Date(event.startTime).toLocaleString();
+            document.getElementById("event-endTime").innerText = new Date(event.endTime).toLocaleString();
+            document.getElementById("event-calendar").innerText = event.calendar.name;
+
+            // ✅ 캘린더 상세 페이지 이동 링크 설정
+            document.getElementById("calendar-detail-link").setAttribute("href", `/calendar/${event.calendar.id}/detail`);
+
+        } catch (error) {
+            console.error(error);
+            alert(error.message);
+        }
+    }
+</script>
+
+<!-- ✅ Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

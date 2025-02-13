@@ -24,8 +24,8 @@ public class EventMapper {
                 .id(event.getId())
                 .title(event.getTitle())
                 .content(event.getContent())
-                .startTime(event.getStartTime())
-                .endTime(event.getEndTime())
+                .startTime(String.valueOf(event.getStartTime()))
+                .endTime(String.valueOf(event.getEndTime()))
                 .calendar(CalendarMapper.convertToResponse(event.getCalendar()))
                 .build();
     }
